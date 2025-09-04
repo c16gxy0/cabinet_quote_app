@@ -8,7 +8,7 @@ const state = {
   admin: false,
   discountPct: 0,
   taxByState: {
-    "AL": 4.00, "AK": 0.00, "AZ": 5.60, "AR": 6.50, "CA": 6.00, "CO": 2.90, "CT": 6.35,
+    "AL": 4.00, "AK": 0.00, "AZ": 8.60, "AR": 6.50, "CA": 6.00, "CO": 2.90, "CT": 6.35,
     "DE": 0.00, "FL": 6.00, "GA": 4.00, "HI": 4.00, "ID": 6.00, "IL": 6.25, "IN": 7.00,
     "IA": 6.00, "KS": 6.50, "KY": 6.00, "LA": 4.45, "ME": 5.50, "MD": 6.00, "MA": 6.25,
     "MI": 6.00, "MN": 6.88, "MS": 7.00, "MO": 4.23, "MT": 0.00, "NE": 5.50, "NV": 6.85,
@@ -20,7 +20,7 @@ const state = {
   stateKey: "AZ",
   noTax: false,
   customTax: null,
-  adminKey: "oakwood" // change this to any passcode you want
+  adminKey: "2468" // change this to any passcode you want
 };
 
 const el = sel => document.querySelector(sel);
