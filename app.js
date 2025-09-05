@@ -1,16 +1,4 @@
-let DATA = {
-  "Shaker Style": {
-    "W1830": 120,
-    "W2430": 140
-    // Add more shaker codes here
-  },
-  "Slim Shaker Style": {
-    // Fill in later
-  },
-  "European Style": {
-    // Fill in later
-  }
-};
+let DATA = {};
 let cart = [];
 let discountRate = 0.5; // 50% default
 
@@ -35,14 +23,13 @@ const categoryColors = {
 };
 
 async function load() {
-  // You can update DATA from prices.json if needed, but for now use above structure
-  // try {
-  //   let res = await fetch("prices.json");
-  //   DATA = await res.json();
-  // } catch (e) {
-  //   console.error("Failed to load JSON", e);
-  // }
-  init();
+  try {
+    let res = await fetch("prices.json");
+    DATA = await res.json();
+    init();
+  } catch (e) {
+    console.error("Failed to load JSON", e);
+  }
 }
 
 function init() {
