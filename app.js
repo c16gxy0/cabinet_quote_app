@@ -26,15 +26,17 @@ async function load() {
 
 function init() {
   // Populate category dropdown
-  let catSelect = document.getElementById("category");
-  catSelect.innerHTML = "";
-  Object.keys(DATA).forEach(cat => {
-    let opt = document.createElement("option");
-    opt.value = cat;
-    opt.textContent = cat;
-    catSelect.appendChild(opt);
-  });
-  catSelect.addEventListener("change", showCategory);
+  let catSelect = document.getElementById("categorySelect");
+  if (catSelect) {
+    catSelect.innerHTML = "";
+    Object.keys(DATA).forEach(cat => {
+      let opt = document.createElement("option");
+      opt.value = cat;
+      opt.textContent = cat;
+      catSelect.appendChild(opt);
+    });
+    catSelect.addEventListener("change", showCategory);
+  }
 
   // Populate color dropdown
   let colorSelect = document.getElementById("colorSelect");
@@ -46,6 +48,7 @@ function init() {
       opt.textContent = c;
       colorSelect.appendChild(opt);
     });
+    colorSelect.addEventListener("change", () => showCategory());
   }
 
   // Populate tax location dropdown
@@ -64,9 +67,14 @@ function init() {
 }
 
 function showCategory() {
-  let cat = document.getElementById("category").value;
+  let catSelect = document.getElementById("categorySelect");
+  let colorSelect = document.getElementById("colorSelect");
   let results = document.getElementById("results");
+  if (!catSelect || !colorSelect || !results) return;
+  let cat = catSelect.value;
   results.innerHTML = "";
+
+  if (!DATA[cat]) return;
 
   Object.entries(DATA[cat]).forEach(([code, price]) => {
     let div = document.createElement("div");
@@ -78,8 +86,7 @@ function showCategory() {
 }
 
 function addToCart(cat, code, basePrice) {
-  // Adjust price by selected color multiplier
-  let color = document.getElementById("color").value;
+  let color = document.getElementById("colorSelect").value;
   let multiplier = colors[color] || 1;
   let price = basePrice * multiplier;
 
@@ -94,6 +101,7 @@ function addToCart(cat, code, basePrice) {
 
 function renderCart() {
   let body = document.getElementById("cart-body");
+  if (!body) return;
   body.innerHTML = "";
 
   cart.forEach((item, idx) => {
@@ -129,21 +137,27 @@ function removeItem(idx) {
 
 function calcTotals() {
   let subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-
-  // Discount
   let discount = subtotal * discountRate;
   let afterDiscount = subtotal - discount;
 
-  // Tax
-  let loc = document.getElementById("location").value;
-  let taxRate = document.getElementById("apply-tax").checked ? (taxRates[loc] || 0) : 0;
+  let locSelect = document.getElementById("locationSelect");
+  let loc = locSelect ? locSelect.value : "";
+  // Simple tax logic; you could add handling for noTax checkbox, etc.
+  let taxRate = taxRates[loc] || 0;
   let tax = afterDiscount * taxRate;
   let total = afterDiscount + tax;
 
-  document.getElementById("subtotal").textContent = `$${subtotal.toFixed(2)}`;
-  document.getElementById("discount").textContent = `- $${discount.toFixed(2)}`;
-  document.getElementById("tax").textContent = `$${tax.toFixed(2)}`;
-  document.getElementById("grand").textContent = `$${total.toFixed(2)}`;
+  let subtotalTxt = document.getElementById("subTotalTxt");
+  let discountTxt = document.getElementById("discountTxt");
+  let afterDiscountTxt = document.getElementById("afterDiscountTxt");
+  let taxRateTxt = document.getElementById("taxRateTxt");
+  let grandTotalTxt = document.getElementById("grandTotalTxt");
+
+  if (subtotalTxt) subtotalTxt.textContent = `$${subtotal.toFixed(2)}`;
+  if (discountTxt) discountTxt.textContent = `- $${discount.toFixed(2)}`;
+  if (afterDiscountTxt) afterDiscountTxt.textContent = `$${afterDiscount.toFixed(2)}`;
+  if (taxRateTxt) taxRateTxt.textContent = `${(taxRate*100).toFixed(2)}%`;
+  if (grandTotalTxt) grandTotalTxt.textContent = `$${total.toFixed(2)}`;
 }
 
 // Allow owner to set discount via console
