@@ -56,25 +56,18 @@ function init() {
       opt.textContent = cat;
       catSelect.appendChild(opt);
     });
-    catSelect.addEventListener("change", () => {
-      populateColorDropdown();
-      showCategory();
-    });
+    // Only one event listener, not inside populateColorDropdown
+    catSelect.addEventListener("change", onCategoryChange);
+  }
+
+  // One-time colorSelect event listener
+  let colorSelect = document.getElementById("colorSelect");
+  if (colorSelect) {
+    colorSelect.addEventListener("change", showCategory);
   }
 
   populateColorDropdown();
-
-  // Populate tax location dropdown
-  let locSelect = document.getElementById("locationSelect");
-  if (locSelect) {
-    locSelect.innerHTML = "";
-    Object.keys(taxRates).forEach(st => {
-      let opt = document.createElement("option");
-      opt.value = st;
-      opt.textContent = st;
-      locSelect.appendChild(opt);
-    });
-  }
+  populateLocationDropdown();
 
   // Add event for no tax checkbox
   let noTaxChk = document.getElementById("noTaxChk");
@@ -88,6 +81,11 @@ function init() {
     addBtn.addEventListener("click", addByCode);
   }
 
+  showCategory();
+}
+
+function onCategoryChange() {
+  populateColorDropdown();
   showCategory();
 }
 
@@ -105,7 +103,23 @@ function populateColorDropdown() {
     opt.textContent = c;
     colorSelect.appendChild(opt);
   });
-  colorSelect.addEventListener("change", showCategory);
+  // Optionally select first color by default if available
+  if (colorSelect.options.length > 0) {
+    colorSelect.selectedIndex = 0;
+  }
+}
+
+function populateLocationDropdown() {
+  let locSelect = document.getElementById("locationSelect");
+  if (locSelect) {
+    locSelect.innerHTML = "";
+    Object.keys(taxRates).forEach(st => {
+      let opt = document.createElement("option");
+      opt.value = st;
+      opt.textContent = st;
+      locSelect.appendChild(opt);
+    });
+  }
 }
 
 function showCategory() {
