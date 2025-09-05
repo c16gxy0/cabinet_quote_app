@@ -37,7 +37,7 @@ function init() {
   catSelect.addEventListener("change", showCategory);
 
   // Populate color dropdown
-  let colorSelect = document.getElementById("color");
+  let colorSelect = document.getElementById("colorSelect");
   if (colorSelect) {
     colorSelect.innerHTML = "";
     Object.keys(colors).forEach(c => {
@@ -49,7 +49,7 @@ function init() {
   }
 
   // Populate tax location dropdown
-  let locSelect = document.getElementById("location");
+  let locSelect = document.getElementById("locationSelect");
   if (locSelect) {
     locSelect.innerHTML = "";
     Object.keys(taxRates).forEach(st => {
