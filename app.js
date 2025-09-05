@@ -1,13 +1,22 @@
 let DATA = {};
 let cart = [];
 let discountRate = 0.5; // 50% default
+
+// Tax rates by location
 let taxRates = {
   "AZ": 0.086,
 };
 
+// Color options (can adjust multipliers if needed)
+let colors = {
+  "White Shaker": 1.0,
+  "Gray Shaker": 1.05,
+  "Espresso": 1.08
+};
+
 async function load() {
   try {
-    let res = await fetch("prices.json");
+    let res = await fetch("prices_simple.json");
     DATA = await res.json();
     init();
   } catch (e) {
@@ -16,6 +25,7 @@ async function load() {
 }
 
 function init() {
+  // Populate category dropdown
   let catSelect = document.getElementById("category");
   catSelect.innerHTML = "";
   Object.keys(DATA).forEach(cat => {
@@ -24,8 +34,32 @@ function init() {
     opt.textContent = cat;
     catSelect.appendChild(opt);
   });
-
   catSelect.addEventListener("change", showCategory);
+
+  // Populate color dropdown
+  let colorSelect = document.getElementById("color");
+  if (colorSelect) {
+    colorSelect.innerHTML = "";
+    Object.keys(colors).forEach(c => {
+      let opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      colorSelect.appendChild(opt);
+    });
+  }
+
+  // Populate tax location dropdown
+  let locSelect = document.getElementById("location");
+  if (locSelect) {
+    locSelect.innerHTML = "";
+    Object.keys(taxRates).forEach(st => {
+      let opt = document.createElement("option");
+      opt.value = st;
+      opt.textContent = st;
+      locSelect.appendChild(opt);
+    });
+  }
+
   showCategory();
 }
 
@@ -43,12 +77,17 @@ function showCategory() {
   });
 }
 
-function addToCart(cat, code, price) {
-  let found = cart.find(i => i.code === code);
+function addToCart(cat, code, basePrice) {
+  // Adjust price by selected color multiplier
+  let color = document.getElementById("color").value;
+  let multiplier = colors[color] || 1;
+  let price = basePrice * multiplier;
+
+  let found = cart.find(i => i.code === code && i.color === color);
   if (found) {
     found.qty += 1;
   } else {
-    cart.push({ cat, code, price, qty: 1 });
+    cart.push({ cat, code, color, price, qty: 1 });
   }
   renderCart();
 }
@@ -60,7 +99,7 @@ function renderCart() {
   cart.forEach((item, idx) => {
     let tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${item.code}</td>
+      <td>${item.code} <br><small>${item.color}</small></td>
       <td>$${item.price.toFixed(2)}</td>
       <td>
         <input type="number" min="1" value="${item.qty}" 
