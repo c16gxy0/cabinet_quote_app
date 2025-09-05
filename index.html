@@ -16,6 +16,11 @@
 
       <section class="panel">
         <div class="row">
+          <label for="categorySelect">Category</label>
+          <select id="categorySelect"></select>
+        </div>
+
+        <div class="row">
           <label for="colorSelect">Color</label>
           <select id="colorSelect"></select>
         </div>
@@ -53,7 +58,7 @@
               <th></th>
             </tr>
           </thead>
-          <tbody id="itemsBody"></tbody>
+          <tbody id="cart-body"></tbody>
         </table>
         <div class="tableActions">
           <button id="clearBtn" class="btn ghost">Clear all</button>
@@ -104,7 +109,7 @@
         </div>
         <div class="line">
           <span>Discount</span>
-          <span id="discountTxt">0%</span>
+          <span id="discountTxt">- $0.00</span>
         </div>
         <div class="line">
           <span>After discount</span>
@@ -112,7 +117,7 @@
         </div>
         <div class="line">
           <span>Tax</span>
-          <span id="taxRateTxt">0%</span>
+          <span id="taxRateTxt">0.00%</span>
         </div>
         <div class="line grand">
           <span>Grand total</span>
@@ -124,7 +129,6 @@
         <small>Switch color to update item prices. Data loads from prices.json</small>
       </footer>
     </div>
-
     <script src="app.js"></script>
   </body>
 </html>
