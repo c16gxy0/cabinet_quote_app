@@ -7,7 +7,7 @@ let taxRates = {
 
 async function load() {
   try {
-    let res = await fetch("prices_simple.json");
+    let res = await fetch("prices.json");
     DATA = await res.json();
     init();
   } catch (e) {
