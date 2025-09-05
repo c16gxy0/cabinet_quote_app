@@ -10,8 +10,8 @@ let taxRates = {
 // Color options (can adjust multipliers if needed)
 let colors = {
   "White Shaker": 1.0,
-  "Gray Shaker": 1.05,
-  "Espresso": 1.08
+  "Gray Shaker": 1.0,
+  "White Oak": 1.0
 };
 
 async function load() {
