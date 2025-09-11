@@ -7,12 +7,12 @@ let taxRates = {
   "AZ": 0.086,
 };
 
-// Color options by category
+// Color options by category (for discount multipliers, not used for code lookup)
 const categoryColors = {
   "Shaker Style": {
-    "White shaker": 1.0,
-    "Grey shaker": 1.0,
-    "Oak shaker": 1.0,
+    "White Shaker": 1.0,
+    "Grey Shaker": 1.0,
+    "Oak Shaker": 1.0,
   },
   "Slim Shaker Style": {
     "Slim oak shaker": 1.0,
@@ -44,11 +44,11 @@ async function load() {
 }
 
 function init() {
-  // Populate category dropdown
+  // Populate category dropdown (styles)
   let catSelect = document.getElementById("categorySelect");
   if (catSelect) {
     catSelect.innerHTML = "";
-    Object.keys(categoryColors).forEach(cat => {
+    Object.keys(DATA).forEach(cat => {
       let opt = document.createElement("option");
       opt.value = cat;
       opt.textContent = cat;
@@ -120,15 +120,16 @@ function populateColorDropdown() {
   let colorSelect = document.getElementById("colorSelect");
   if (!catSelect || !colorSelect) return;
   let cat = catSelect.value;
-  let colors = categoryColors[cat] || {};
 
   colorSelect.innerHTML = "";
-  Object.keys(colors).forEach(c => {
-    let opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    colorSelect.appendChild(opt);
-  });
+  if (DATA[cat]) {
+    Object.keys(DATA[cat]).forEach(color => {
+      let opt = document.createElement("option");
+      opt.value = color;
+      opt.textContent = color;
+      colorSelect.appendChild(opt);
+    });
+  }
   if (colorSelect.options.length > 0) {
     colorSelect.selectedIndex = 0;
   }
@@ -149,18 +150,20 @@ function populateLocationDropdown() {
 
 function showCategory() {
   let catSelect = document.getElementById("categorySelect");
+  let colorSelect = document.getElementById("colorSelect");
   let results = document.getElementById("results");
-  if (!catSelect || !results) return;
+  if (!catSelect || !colorSelect || !results) return;
   let cat = catSelect.value;
+  let color = colorSelect.value;
   results.innerHTML = "";
 
-  if (!DATA[cat]) return;
+  if (!DATA[cat] || !DATA[cat][color]) return;
 
-  Object.entries(DATA[cat]).forEach(([code, price]) => {
+  Object.entries(DATA[cat][color]).forEach(([code, price]) => {
     let div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `<b>${code}</b><small>$${price.toFixed(2)}</small>`;
-    div.onclick = () => addToCart(cat, code, price);
+    div.onclick = () => addToCart(cat, color, code, price);
     results.appendChild(div);
   });
 }
@@ -176,12 +179,12 @@ function addByCode() {
   let code = codeInput.value.trim();
   let qty = parseInt(qtyInput.value, 10) || 1;
 
-  if (DATA[cat] && DATA[cat][code]) {
-    let basePrice = DATA[cat][code];
+  if (DATA[cat] && DATA[cat][color] && DATA[cat][color][code]) {
+    let basePrice = DATA[cat][color][code];
     let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
     let price = basePrice * multiplier;
 
-    let found = cart.find(i => i.code === code && i.color === color);
+    let found = cart.find(i => i.code === code && i.color === color && i.cat === cat);
     if (found) {
       found.qty += qty;
     } else {
@@ -191,17 +194,15 @@ function addByCode() {
     codeInput.value = "";
     qtyInput.value = 1;
   } else {
-    alert("Item code not found in selected category.");
+    alert("Item code not found in selected category/color.");
   }
 }
 
-function addToCart(cat, code, basePrice) {
-  let colorSelect = document.getElementById("colorSelect");
-  let color = colorSelect ? colorSelect.value : "";
+function addToCart(cat, color, code, basePrice) {
   let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
   let price = basePrice * multiplier;
 
-  let found = cart.find(i => i.code === code && i.color === color);
+  let found = cart.find(i => i.code === code && i.color === color && i.cat === cat);
   if (found) {
     found.qty += 1;
   } else {
@@ -218,7 +219,7 @@ function renderCart() {
   cart.forEach((item, idx) => {
     let tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${item.code} <br><small>${item.color}</small></td>
+      <td>${item.code} <br><small>${item.cat} – ${item.color}</small></td>
       <td>$${item.price.toFixed(2)}</td>
       <td>
         <input type="number" min="1" value="${item.qty}" 
