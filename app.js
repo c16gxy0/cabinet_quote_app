@@ -219,7 +219,7 @@ function renderCart() {
   cart.forEach((item, idx) => {
     let tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${item.code} <br><small>${item.cat} – ${item.color}</small></td>
+      <td>${item.code} <br><small>${item.color}</small></td>
       <td>$${item.price.toFixed(2)}</td>
       <td>
         <input type="number" min="1" value="${item.qty}" 
