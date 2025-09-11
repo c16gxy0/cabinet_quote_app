@@ -5,45 +5,115 @@
   <title>Cabinet Quote App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
-    .container { max-width: 900px; margin: 24px auto; background: #fff; padding: 24px 32px 32px 32px; border-radius: 9px; box-shadow: 0 4px 20px #0001; }
-    h1 { font-size: 2.2em; margin-top: 0 }
-    label { font-weight:bold; margin-top: 1em; display: block; }
-    select, input[type="text"], input[type="number"] {
-      padding: 6px; border-radius: 4px; border: 1px solid #bbb; margin: 0 6px 0 0; font-size: 1em;
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      margin: 0;
+      padding: 0;
     }
-    .row { display: flex; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
-    .row > * { margin-right: 16px; margin-bottom: 4px; }
+    .container {
+      max-width: 800px;
+      margin: 32px auto 32px auto;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 16px #0002;
+      padding: 28px 32px 32px 32px;
+    }
+    h1 {
+      font-size: 2em;
+      margin-top: 0;
+      margin-bottom: 18px;
+    }
+    label {
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    select, input[type="text"], input[type="number"] {
+      padding: 5px 8px;
+      border-radius: 4px;
+      border: 1px solid #bbb;
+      font-size: 1em;
+      margin-right: 10px;
+      margin-bottom: 6px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 14px;
+    }
     .card {
       display: inline-block;
-      width: 135px;
-      margin: 6px;
-      padding: 10px 8px 8px 8px;
-      background: #eaf0fa;
-      border-radius: 7px;
-      box-shadow: 0 2px 6px #0001;
+      min-width: 105px;
+      margin: 7px 7px 2px 0;
+      padding: 7px 10px 6px 10px;
+      background: #eaefff;
+      border-radius: 5px;
+      box-shadow: 0 1px 6px #0001;
       cursor: pointer;
       text-align: center;
       transition: box-shadow 0.2s;
     }
-    .card:hover { background: #d8e6fa; box-shadow: 0 2px 16px #0002;}
-    .card b { font-size: 1.12em; display:block; }
-    .card small { color: #555; }
-
-    table { border-collapse: collapse; width: 99%; margin-top: 10px;}
-    th, td { border: 1px solid #bbb; padding: 7px 8px; }
-    th { background: #f1f5fc; }
-    td input[type="number"] { width: 50px; text-align: right; }
-    .btn { padding: 5px 13px; background: #2266dd; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
-    .btn.danger { background: #d44; }
-    .btn:active { background: #114488;}
-    #results { margin-top: 12px; }
-    #exportButtons { margin: 1em 0;}
+    .card:hover {
+      background: #d5e2fa;
+      box-shadow: 0 2px 12px #0002;
+    }
+    .card b {
+      font-size: 1.12em;
+      display: block;
+    }
+    .card small {
+      color: #777;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 12px;
+      background: #f9faff;
+    }
+    th, td {
+      border: 1px solid #bbb;
+      padding: 7px 9px;
+    }
+    th {
+      background: #eaf0fa;
+      font-size: 1.02em;
+    }
+    td input[type="number"] {
+      width: 50px;
+      text-align: right;
+    }
+    .btn {
+      padding: 5px 13px;
+      background: #2b6ec4;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 6px;
+    }
+    .btn.danger {
+      background: #c43a3a;
+    }
+    .btn:active {
+      background: #224488;
+    }
+    #results {
+      margin-top: 10px;
+    }
+    #exportButtons {
+      margin: 1.4em 0 0.6em 0;
+    }
+    #exportButtons button {
+      margin-right: 9px;
+      margin-bottom: 2px;
+    }
     @media (max-width:600px) {
       .container { padding: 8px; }
       .row { flex-direction: column; align-items: flex-start; }
-      .card { width: 99%; }
-      table { font-size: 0.96em; }
+      .card { width: 99%; min-width: unset;}
+      table { font-size: 0.98em; }
     }
   </style>
 </head>
@@ -58,9 +128,9 @@
     </div>
     <div class="row">
       <label>Add item by code:</label>
-      <input id="codeInput" type="text" placeholder="e.g. W1830" autocomplete="off" style="width:100px;">
+      <input id="codeInput" type="text" placeholder="e.g. W1830" autocomplete="off" style="width:90px;">
       <label for="qtyInput">Qty:</label>
-      <input id="qtyInput" type="number" min="1" value="1" style="width:60px;">
+      <input id="qtyInput" type="number" min="1" value="1" style="width:50px;">
       <button class="btn" id="addBtn">Add</button>
     </div>
     <div id="results"></div>
@@ -81,10 +151,10 @@
     <div class="row" style="margin-top:20px;">
       <label for="locationSelect">Location:</label>
       <select id="locationSelect"></select>
-      <label><input type="checkbox" id="noTaxChk"> No Tax</label>
+      <label style="margin-left:15px;"><input type="checkbox" id="noTaxChk"> No Tax</label>
       <button class="btn danger" id="clearBtn">Clear Cart</button>
     </div>
-    <div style="margin: 20px 0 0 0; font-size:1.12em;">
+    <div style="margin: 18px 0 0 0; font-size:1.11em;">
       <div>Subtotal: <span id="subTotalTxt">$0.00</span></div>
       <div>Discount: <span id="discountTxt">50%</span></div>
       <div>After Discount: <span id="afterDiscountTxt">$0.00</span></div>
@@ -96,7 +166,7 @@
       <button id="exportWordBtn">Export as Word</button>
       <button id="exportPdfBtn">Export as PDF</button>
     </div>
-    <p style="color:#aaa; font-size:0.95em; margin-top:24px;">
+    <p style="color:#aaa; font-size:0.95em; margin-top:20px;">
       &copy; 2025 Cabinet Quote App
     </p>
   </div>
