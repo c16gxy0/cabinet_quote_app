@@ -1,13 +1,12 @@
 :root {
-  --bg:#ffffff;        /* background */
-  --card:#f9f9f9;      /* panels */
-  --ink:#111111;       /* main text */
-  --sub:#555555;       /* sub text */
-  --accent:#4da3ff;    /* buttons */
-  --muted:#888888;     /* muted */
-  --danger:#ff5d5d;    /* danger buttons */
+  --bg:#ffffff;
+  --card:#f9f9f9;
+  --ink:#111111;
+  --sub:#555555;
+  --accent:#4da3ff;
+  --muted:#888888;
+  --danger:#ff5d5d;
 }
-
 * { box-sizing:border-box }
 html, body {
   margin:0;
@@ -16,36 +15,38 @@ html, body {
   color:var(--ink);
   font:16px system-ui, Arial, sans-serif;
 }
-
 .wrap {
-  max-width:1100px;
+  width:100%;
+  max-width:1200px;
   margin:0 auto;
   padding:20px;
+  display: flex;
+  gap: 24px;
 }
-
-.bar {
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:10px 14px;
-  border:1px solid #ddd;
-  background:#f5f5f5;
-  border-radius:14px;
-  position:sticky;
-  top:0;
-  z-index:10;
+.grid-2col {
+  display: flex;
+  gap: 24px;
 }
-.bar h1 { font-size:20px; margin:0 }
-.spacer { flex:1 }
-
+.left-panel, .right-panel {
+  flex: 1 1 0;
+  min-width: 330px;
+}
+@media (max-width: 900px) {
+  .wrap, .grid-2col {
+    flex-direction: column;
+    gap: 0;
+  }
+  .left-panel, .right-panel {
+    min-width: unset;
+  }
+}
 .panel {
   border:1px solid #ddd;
   background:var(--card);
   border-radius:14px;
   padding:16px;
-  margin-top:16px;
+  margin-bottom:20px;
 }
-
 .row {
   display:flex;
   gap:10px;
@@ -53,7 +54,6 @@ html, body {
   margin-top:10px;
   flex-wrap:wrap;
 }
-
 label { min-width:120px }
 input, select, button, details, summary { font:inherit }
 input, select {
@@ -64,7 +64,6 @@ input, select {
   padding:10px 12px;
 }
 input::placeholder { color:var(--muted) }
-
 .btn {
   background:var(--accent);
   color:#fff;
@@ -80,30 +79,17 @@ input::placeholder { color:var(--muted) }
   border:1px solid #ccc;
 }
 .btn.danger { background:var(--danger); color:white }
-
 .hstack { display:flex; gap:8px; align-items:center }
-
-.grid.two {
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:16px;
-}
-@media (max-width:900px){
-  .grid.two{ grid-template-columns:1fr }
-}
-
 .muted { color:var(--sub) }
 .center { text-align:center }
-
 .results {
   display:grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap:8px;
   margin-top:10px;
   max-height:260px;
   overflow:auto;
 }
-
 .card {
   border:1px solid #ccc;
   background:#fff;
@@ -113,7 +99,6 @@ input::placeholder { color:var(--muted) }
 }
 .card b { display:block; font-size:14px }
 .card small { color:var(--muted) }
-
 table {
   width:100%;
   border-collapse:separate;
@@ -142,7 +127,6 @@ tbody tr td:last-child {
   border-bottom-right-radius:10px;
 }
 .tableActions { display:flex; justify-content:flex-end; margin-top:10px }
-
 .totals .line {
   display:flex;
   justify-content:space-between;
