@@ -57,7 +57,10 @@ function init() {
     catSelect.addEventListener("change", onCategoryChange);
   }
 
-  // One-time colorSelect event listener
+  // Populate color dropdown on load
+  populateColorDropdown();
+
+  // Listen for color changes
   let colorSelect = document.getElementById("colorSelect");
   if (colorSelect) {
     colorSelect.addEventListener("change", showCategory);
@@ -72,7 +75,6 @@ function init() {
       }
     });
   }
-
   let qtyInput = document.getElementById("qtyInput");
   if (qtyInput) {
     qtyInput.addEventListener("keydown", function(e) {
@@ -82,7 +84,6 @@ function init() {
     });
   }
 
-  populateColorDropdown();
   populateLocationDropdown();
 
   // Add event for no tax checkbox
