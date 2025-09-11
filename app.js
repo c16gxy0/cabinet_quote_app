@@ -10,15 +10,26 @@ let taxRates = {
 // Color options by category
 const categoryColors = {
   "Shaker Style": {
-    "White Shaker": 1.0,
-    "Gray Shaker": 1.0,
-    "White Oak": 1.0,
+    "White shaker": 1.0,
+    "Grey shaker": 1.0,
+    "Oak shaker": 1.0,
   },
   "Slim Shaker Style": {
-    // Add colors later
+    "Slim oak shaker": 1.0,
+    "Slim white shaker": 1.0,
+    "Slim black shaker": 1.0,
+    "Slim green shaker": 1.0,
   },
   "European Style": {
-    // Add colors later
+    "Dark wood": 1.0,
+    "Pale Pine": 1.0,
+    "Walnut": 1.0,
+    "Walnut light": 1.0,
+    "Rustic Oak": 1.0,
+    "Glossy white": 1.0,
+    "Glossy grey": 1.0,
+    "Lacquer White": 1.0,
+    "Slim Natural Shaker": 1.0,
   }
 };
 
@@ -37,13 +48,12 @@ function init() {
   let catSelect = document.getElementById("categorySelect");
   if (catSelect) {
     catSelect.innerHTML = "";
-    Object.keys(DATA).forEach(cat => {
+    Object.keys(categoryColors).forEach(cat => {
       let opt = document.createElement("option");
       opt.value = cat;
       opt.textContent = cat;
       catSelect.appendChild(opt);
     });
-    // Only one event listener, not inside populateColorDropdown
     catSelect.addEventListener("change", onCategoryChange);
   }
 
@@ -51,6 +61,25 @@ function init() {
   let colorSelect = document.getElementById("colorSelect");
   if (colorSelect) {
     colorSelect.addEventListener("change", showCategory);
+  }
+
+  // Listen for Enter key in add by code
+  let codeInput = document.getElementById("codeInput");
+  if (codeInput) {
+    codeInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        addByCode();
+      }
+    });
+  }
+
+  let qtyInput = document.getElementById("qtyInput");
+  if (qtyInput) {
+    qtyInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        addByCode();
+      }
+    });
   }
 
   populateColorDropdown();
@@ -66,6 +95,15 @@ function init() {
   let addBtn = document.getElementById("addBtn");
   if (addBtn) {
     addBtn.addEventListener("click", addByCode);
+  }
+
+  // Optionally clear cart
+  let clearBtn = document.getElementById("clearBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      cart = [];
+      renderCart();
+    });
   }
 
   showCategory();
@@ -90,7 +128,6 @@ function populateColorDropdown() {
     opt.textContent = c;
     colorSelect.appendChild(opt);
   });
-  // Optionally select first color by default if available
   if (colorSelect.options.length > 0) {
     colorSelect.selectedIndex = 0;
   }
