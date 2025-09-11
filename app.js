@@ -106,6 +106,9 @@ function init() {
     });
   }
 
+  // Attach export listeners
+  attachExportListeners();
+
   showCategory();
 }
 
@@ -287,5 +290,78 @@ window.setDiscount = function(rate) {
   discountRate = rate;
   renderCart();
 };
+
+// ----------------- EXPORT FUNCTIONS -----------------
+function getQuoteText() {
+  let lines = [];
+  lines.push("Quote");
+  lines.push("===================================");
+  cart.forEach(item => {
+    lines.push(
+      `${item.code} (${item.color}) x${item.qty} @ $${item.price.toFixed(2)} = $${(item.price * item.qty).toFixed(2)}`
+    );
+  });
+  lines.push("-----------------------------------");
+  lines.push(`Subtotal: ${document.getElementById("subTotalTxt").textContent}`);
+  lines.push(`Discount: ${document.getElementById("discountTxt").textContent}`);
+  lines.push(`After Discount: ${document.getElementById("afterDiscountTxt").textContent}`);
+  lines.push(`Tax Rate: ${document.getElementById("taxRateTxt").textContent}`);
+  lines.push(`Total: ${document.getElementById("grandTotalTxt").textContent}`);
+  return lines.join("\n");
+}
+
+// Export as text file
+function exportAsText() {
+  let text = getQuoteText();
+  let blob = new Blob([text], {type: "text/plain"});
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "quote.txt";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Export as Word file (by saving HTML as .doc)
+function exportAsWord() {
+  let text = getQuoteText().replace(/\n/g, "<br>");
+  let html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><title>Quote</title></head><body>${text}</body></html>
+  `;
+  let blob = new Blob(['\ufeff', html], {type: 'application/msword'});
+  let link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "quote.doc";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Export as PDF (using jsPDF library)
+function exportAsPDF() {
+  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+    alert("PDF export requires jsPDF. Please include it on your page.");
+    return;
+  }
+  // Support for both jsPDF v2.x and v1.x
+  let doc = window.jsPDF ? new window.jsPDF() : new window.jspdf.jsPDF();
+  let lines = getQuoteText().split("\n");
+  let y = 10;
+  lines.forEach(line => {
+    doc.text(line, 10, y);
+    y += 8;
+  });
+  doc.save("quote.pdf");
+}
+
+function attachExportListeners() {
+  if (document.getElementById("exportTextBtn"))
+    document.getElementById("exportTextBtn").addEventListener("click", exportAsText);
+  if (document.getElementById("exportWordBtn"))
+    document.getElementById("exportWordBtn").addEventListener("click", exportAsWord);
+  if (document.getElementById("exportPdfBtn"))
+    document.getElementById("exportPdfBtn").addEventListener("click", exportAsPDF);
+}
 
 load();
