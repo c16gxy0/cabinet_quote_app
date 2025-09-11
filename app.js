@@ -7,7 +7,6 @@ let taxRates = {
   "AZ": 0.086,
 };
 
-// Color options by category (for discount multipliers, not used for code lookup)
 const categoryColors = {
   "Shaker Style": {
     "White Shaker": 1.0,
@@ -219,10 +218,10 @@ function renderCart() {
   cart.forEach((item, idx) => {
     let tr = document.createElement("tr");
     tr.innerHTML = `
-      <td>${item.code} <br><small>${item.color}</small></td>
+      <td style="width:190px">${item.code} <br><small>${item.color}</small></td>
       <td>$${item.price.toFixed(2)}</td>
-      <td>
-        <input type="number" min="1" value="${item.qty}" 
+      <td style="width:60px">
+        <input type="number" min="1" value="${item.qty}" style="width:50px;text-align:right"
           onchange="updateQty(${idx}, this.value)">
       </td>
       <td>$${(item.price * item.qty).toFixed(2)}</td>
