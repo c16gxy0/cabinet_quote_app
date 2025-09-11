@@ -175,23 +175,34 @@ function addByCode() {
   if (!catSelect || !colorSelect || !codeInput || !qtyInput) return;
   let cat = catSelect.value;
   let color = colorSelect.value;
-  let code = codeInput.value.trim();
+  let codeInputValue = codeInput.value.trim();
+
+  // Make code input uppercase for comparison
+  let code = codeInputValue.toUpperCase();
   let qty = parseInt(qtyInput.value, 10) || 1;
 
-  if (DATA[cat] && DATA[cat][color] && DATA[cat][color][code]) {
-    let basePrice = DATA[cat][color][code];
-    let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
-    let price = basePrice * multiplier;
+  // Find the actual code in pricing data, case-insensitive
+  let codeMap = {};
+  if (DATA[cat] && DATA[cat][color]) {
+    Object.keys(DATA[cat][color]).forEach(k => { codeMap[k.toUpperCase()] = k; });
+    let actualCode = codeMap[code];
+    if (actualCode) {
+      let basePrice = DATA[cat][color][actualCode];
+      let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
+      let price = basePrice * multiplier;
 
-    let found = cart.find(i => i.code === code && i.color === color && i.cat === cat);
-    if (found) {
-      found.qty += qty;
+      let found = cart.find(i => i.code === actualCode && i.color === color && i.cat === cat);
+      if (found) {
+        found.qty += qty;
+      } else {
+        cart.push({ cat, code: actualCode, color, price, qty: qty });
+      }
+      renderCart();
+      codeInput.value = "";
+      qtyInput.value = 1;
     } else {
-      cart.push({ cat, code, color, price, qty: qty });
+      alert("Item code not found in selected category/color.");
     }
-    renderCart();
-    codeInput.value = "";
-    qtyInput.value = 1;
   } else {
     alert("Item code not found in selected category/color.");
   }
