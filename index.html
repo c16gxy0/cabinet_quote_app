@@ -26,7 +26,7 @@
             <select id="colorSelect"></select>
           </div>
 
-          <!-- New: color apply controls -->
+          <!-- Optional: color apply controls -->
           <div class="row">
             <label class="hstack" style="gap:8px;">
               <input type="checkbox" id="syncColorCatChk" />
@@ -37,17 +37,24 @@
 
           <div class="row">
             <label for="codeInput">Add item by code</label>
-            <div class="hstack">
+            <div class="hstack" style="position:relative; align-items:flex-start;">
               <input id="codeInput" placeholder="ex W1830" />
               <input id="qtyInput" type="number" min="1" value="1" style="width:90px"/>
               <button id="addBtn" class="btn">Add</button>
+
+              <!-- Suggestions dropdown: entirely optional styling, inline to avoid CSS changes -->
+              <div id="codeSuggest"
+                   style="display:none; position:absolute; top:100%; left:0; z-index: 50;
+                          background:#fff; border:1px solid #ddd; border-radius:4px;
+                          box-shadow:0 6px 18px rgba(0,0,0,0.12); max-height:260px; overflow:auto;">
+              </div>
             </div>
             <small id="codeHelp" class="muted">
               Enter key adds item by code.
             </small>
           </div>
 
-          <!-- New: apply selected color to this code in cart -->
+          <!-- Optional: apply selected color to this code -->
           <div class="row">
             <button id="applyColorToCodeBtn" class="btn ghost">Apply selected color to this code in cart</button>
           </div>
