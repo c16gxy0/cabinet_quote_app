@@ -1,6 +1,7 @@
-// --- Cabinet Quote App Main Logic with Type-ahead Suggestions ---
+// --- Cabinet Quote App Main Logic with Type-ahead Suggestions (robust Add button) ---
 
 let DATA = {};
+let dataReady = false;
 let cart = [];
 let discountRate = 0.5; // 50% default
 
@@ -39,45 +40,59 @@ const categoryColors = {
 
 async function load() {
   try {
-    let res = await fetch("prices.json");
+    const res = await fetch("prices.json");
     DATA = await res.json();
-    init();
+    initData();
   } catch (e) {
     console.error("Failed to load JSON", e);
+    alert("Failed to load prices.json. Please make sure you are serving the app over HTTP (not file://).");
   }
 }
 
-function init() {
+// Called after DATA is available
+function initData() {
+  dataReady = true;
+
   // Populate category dropdown (styles)
-  let catSelect = document.getElementById("categorySelect");
+  const catSelect = document.getElementById("categorySelect");
   if (catSelect) {
     catSelect.innerHTML = "";
     Object.keys(DATA).forEach(cat => {
-      let opt = document.createElement("option");
+      const opt = document.createElement("option");
       opt.value = cat;
       opt.textContent = cat;
       catSelect.appendChild(opt);
     });
-    catSelect.addEventListener("change", onCategoryChange);
   }
 
-  // Populate color dropdown on load
+  // Populate initial colors and results
   populateColorDropdown();
+  showCategory();
 
-  // Listen for color changes
-  let colorSelect = document.getElementById("colorSelect");
-  if (colorSelect) {
-    colorSelect.addEventListener("change", onColorChange);
-  }
+  // Enable the Add button now that data is ready
+  const addBtn = document.getElementById("addBtn");
+  if (addBtn) addBtn.disabled = false;
+}
+
+function wireUI() {
+  // Category and color listeners
+  document.getElementById("categorySelect")?.addEventListener("change", () => {
+    populateColorDropdown();
+    onColorChange();
+    hideCodeSuggestions();
+  });
+
+  document.getElementById("colorSelect")?.addEventListener("change", onColorChange);
 
   // Code input: Enter adds, input shows suggestions, keyboard nav
-  let codeInput = document.getElementById("codeInput");
+  const codeInput = document.getElementById("codeInput");
   if (codeInput) {
     codeInput.addEventListener("keydown", onCodeInputKeydown);
     codeInput.addEventListener("input", onCodeInputChange);
   }
 
-  let qtyInput = document.getElementById("qtyInput");
+  // Qty input: Enter adds
+  const qtyInput = document.getElementById("qtyInput");
   if (qtyInput) {
     qtyInput.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
@@ -96,28 +111,21 @@ function init() {
     }
   });
 
-  populateLocationDropdown();
-
   // No tax checkbox
-  let noTaxChk = document.getElementById("noTaxChk");
-  if (noTaxChk) {
-    noTaxChk.addEventListener("change", calcTotals);
-  }
+  document.getElementById("noTaxChk")?.addEventListener("change", calcTotals);
 
-  // Add item by code
-  let addBtn = document.getElementById("addBtn");
+  // Add item by code (wire immediately; disable until data is loaded)
+  const addBtn = document.getElementById("addBtn");
   if (addBtn) {
     addBtn.addEventListener("click", addByCode);
+    addBtn.disabled = true; // will be enabled after initData runs
   }
 
   // Clear cart
-  let clearBtn = document.getElementById("clearBtn");
-  if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      cart = [];
-      renderCart();
-    });
-  }
+  document.getElementById("clearBtn")?.addEventListener("click", () => {
+    cart = [];
+    renderCart();
+  });
 
   // Apply color actions
   document.getElementById("applyColorNowBtn")?.addEventListener("click", () => {
@@ -130,29 +138,22 @@ function init() {
 
   document.getElementById("applyColorToCodeBtn")?.addEventListener("click", applySelectedColorToThisCode);
 
-  // Export listeners attached after DOM ready (bottom)
-
-  showCategory();
-}
-
-// ---------- Dropdown population ----------
-
-function onCategoryChange() {
-  populateColorDropdown();
-  onColorChange();
-  hideCodeSuggestions();
+  // Export buttons
+  document.getElementById("exportTextBtn")?.addEventListener("click", exportAsText);
+  document.getElementById("exportWordBtn")?.addEventListener("click", exportAsWord);
+  document.getElementById("exportPdfBtn")?.addEventListener("click", exportAsPDF);
 }
 
 function populateColorDropdown() {
-  let catSelect = document.getElementById("categorySelect");
-  let colorSelect = document.getElementById("colorSelect");
+  const catSelect = document.getElementById("categorySelect");
+  const colorSelect = document.getElementById("colorSelect");
   if (!catSelect || !colorSelect) return;
-  let cat = catSelect.value;
+  const cat = catSelect.value;
 
   colorSelect.innerHTML = "";
   if (DATA[cat]) {
     Object.keys(DATA[cat]).forEach(color => {
-      let opt = document.createElement("option");
+      const opt = document.createElement("option");
       opt.value = color;
       opt.textContent = color;
       colorSelect.appendChild(opt);
@@ -180,18 +181,18 @@ function onColorChange() {
 // ---------- Catalog rendering (cards) ----------
 
 function showCategory() {
-  let catSelect = document.getElementById("categorySelect");
-  let colorSelect = document.getElementById("colorSelect");
-  let results = document.getElementById("results");
+  const catSelect = document.getElementById("categorySelect");
+  const colorSelect = document.getElementById("colorSelect");
+  const results = document.getElementById("results");
   if (!catSelect || !colorSelect || !results) return;
-  let cat = catSelect.value;
-  let color = colorSelect.value;
+  const cat = catSelect.value;
+  const color = colorSelect.value;
   results.innerHTML = "";
 
   if (!DATA[cat] || !DATA[cat][color]) return;
 
   Object.entries(DATA[cat][color]).forEach(([code, price]) => {
-    let div = document.createElement("div");
+    const div = document.createElement("div");
     div.className = "card";
     div.innerHTML = `<b>${code}</b><small>$${Number(price).toFixed(2)}</small>`;
     div.onclick = () => addToCart(cat, color, code, Number(price));
@@ -202,35 +203,40 @@ function showCategory() {
 // ---------- Add to cart (by code or card) ----------
 
 function addByCode() {
-  let catSelect = document.getElementById("categorySelect");
-  let colorSelect = document.getElementById("colorSelect");
-  let codeInput = document.getElementById("codeInput");
-  let qtyInput = document.getElementById("qtyInput");
+  if (!dataReady) {
+    alert("Prices are still loading. Please wait a moment and try again.");
+    return;
+  }
+
+  const catSelect = document.getElementById("categorySelect");
+  const colorSelect = document.getElementById("colorSelect");
+  const codeInput = document.getElementById("codeInput");
+  const qtyInput = document.getElementById("qtyInput");
   if (!catSelect || !colorSelect || !codeInput || !qtyInput) return;
 
-  let cat = catSelect.value;
-  let color = colorSelect.value;
-  let codeInputValue = codeInput.value.trim();
+  const cat = catSelect.value;
+  const color = colorSelect.value;
+  const codeInputValue = codeInput.value.trim();
   if (!codeInputValue) return;
 
   // uppercase compare
-  let code = codeInputValue.toUpperCase();
-  let qty = parseInt(qtyInput.value, 10) || 1;
+  const code = codeInputValue.toUpperCase();
+  const qty = parseInt(qtyInput.value, 10) || 1;
 
-  let codeMap = {};
+  const codeMap = {};
   if (DATA[cat] && DATA[cat][color]) {
     Object.keys(DATA[cat][color]).forEach(k => { codeMap[k.toUpperCase()] = k; });
-    let actualCode = codeMap[code];
+    const actualCode = codeMap[code];
     if (actualCode) {
-      let basePrice = Number(DATA[cat][color][actualCode]);
-      let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
-      let price = basePrice * multiplier;
+      const basePrice = Number(DATA[cat][color][actualCode]);
+      const multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
+      const price = basePrice * multiplier;
 
-      let found = cart.find(i => i.code === actualCode && i.color === color && i.cat === cat);
+      const found = cart.find(i => i.code === actualCode && i.color === color && i.cat === cat);
       if (found) {
         found.qty += qty;
       } else {
-        cart.push({ cat, code: actualCode, color, price, qty: qty });
+        cart.push({ cat, code: actualCode, color, price, qty });
       }
       renderCart();
       hideCodeSuggestions();
@@ -245,10 +251,10 @@ function addByCode() {
 }
 
 function addToCart(cat, color, code, basePrice) {
-  let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
-  let price = basePrice * multiplier;
+  const multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
+  const price = basePrice * multiplier;
 
-  let found = cart.find(i => i.code === code && i.color === color && i.cat === cat);
+  const found = cart.find(i => i.code === code && i.color === color && i.cat === cat);
   if (found) {
     found.qty += 1;
   } else {
@@ -260,12 +266,12 @@ function addToCart(cat, color, code, basePrice) {
 // ---------- Cart rendering and totals ----------
 
 function renderCart() {
-  let body = document.getElementById("cart-body");
+  const body = document.getElementById("cart-body");
   if (!body) return;
   body.innerHTML = "";
 
   cart.forEach((item, idx) => {
-    let tr = document.createElement("tr");
+    const tr = document.createElement("tr");
     tr.innerHTML = `
       <td style="width:150px">${item.code} <br><small>${item.color}</small></td>
       <td>$${item.price.toFixed(2)}</td>
@@ -283,7 +289,7 @@ function renderCart() {
 }
 
 function updateQty(idx, val) {
-  let qty = parseInt(val);
+  const qty = parseInt(val);
   if (qty > 0) {
     cart[idx].qty = qty;
   }
@@ -296,16 +302,16 @@ function removeItem(idx) {
 }
 
 function calcTotals() {
-  let subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  let discount = subtotal * discountRate;
-  let afterDiscount = subtotal - discount;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const discount = subtotal * discountRate;
+  const afterDiscount = subtotal - discount;
 
-  let noTax = document.getElementById("noTaxChk")?.checked;
-  let locSelect = document.getElementById("locationSelect");
-  let loc = locSelect ? locSelect.value : "";
-  let taxRate = (!noTax) ? (taxRates[loc] || 0) : 0;
-  let tax = afterDiscount * taxRate;
-  let total = afterDiscount + tax;
+  const noTax = document.getElementById("noTaxChk")?.checked;
+  const locSelect = document.getElementById("locationSelect");
+  const loc = locSelect ? locSelect.value : "";
+  const taxRate = (!noTax) ? (taxRates[loc] || 0) : 0;
+  const tax = afterDiscount * taxRate;
+  const total = afterDiscount + tax;
 
   document.getElementById("subTotalTxt").textContent = `$${subtotal.toFixed(2)}`;
   document.getElementById("discountTxt").textContent = `${(discountRate * 100).toFixed(0)}%`;
@@ -479,7 +485,7 @@ function onCodeInputKeydown(e) {
     if (hasBox && suggestIndex >= 0) {
       e.preventDefault();
       chooseSuggestion(suggestIndex);
-      // After choosing, pressing Enter again will add; here we immediately add for convenience:
+      // Immediately add for convenience
       addByCode();
       return;
     }
@@ -549,9 +555,9 @@ function exportAsText() {
   lines.push("After Discount:" + document.getElementById("afterDiscountTxt").textContent);
   lines.push("Tax Rate:      " + document.getElementById("taxRateTxt").textContent);
   lines.push("Grand Total:   " + document.getElementById("grandTotalTxt").textContent);
-  let text = lines.join("\n");
-  let blob = new Blob([text], {type: "text/plain"});
-  let link = document.createElement("a");
+  const text = lines.join("\n");
+  const blob = new Blob([text], {type: "text/plain"});
+  const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "quote.txt";
   document.body.appendChild(link);
@@ -592,13 +598,13 @@ function exportAsWord() {
     Grand Total: ${document.getElementById("grandTotalTxt").textContent}
   `;
 
-  let doc = `
+  const doc = `
     <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
     <head><title>Quote</title></head>
     <body>${html}</body></html>
   `;
-  let blob = new Blob(['\ufeff', doc], {type: 'application/msword'});
-  let link = document.createElement("a");
+  const blob = new Blob(['\ufeff', doc], {type: 'application/msword'});
+  const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "quote.doc";
   document.body.appendChild(link);
@@ -614,7 +620,7 @@ function exportAsPDF() {
     return;
   }
   const jobName = getJobName();
-  let doc = new jsPDF();
+  const doc = new jsPDF();
   let y = 12;
   doc.setFontSize(16);
   doc.text("Cabinet Quote", 10, y);
@@ -659,18 +665,25 @@ function exportAsPDF() {
   doc.save("quote.pdf");
 }
 
-// Attach listeners once DOM is ready
-window.addEventListener("DOMContentLoaded", function() {
-  if (document.getElementById("exportTextBtn"))
-    document.getElementById("exportTextBtn").addEventListener("click", exportAsText);
-  if (document.getElementById("exportWordBtn"))
-    document.getElementById("exportWordBtn").addEventListener("click", exportAsWord);
-  if (document.getElementById("exportPdfBtn"))
-    document.getElementById("exportPdfBtn").addEventListener("click", exportAsPDF);
+// ---------- Boot ----------
 
-  // render if anything preloaded
-  renderCart();
+window.addEventListener("DOMContentLoaded", function() {
+  wireUI();
+  renderCart();     // render empty cart
+  load();           // fetch prices and enable UI after ready
+  // Also populate location select now
+  populateLocationDropdown();
 });
 
-// Main load
-load();
+function populateLocationDropdown() {
+  const locSelect = document.getElementById("locationSelect");
+  if (locSelect) {
+    locSelect.innerHTML = "";
+    Object.keys(taxRates).forEach(st => {
+      const opt = document.createElement("option");
+      opt.value = st;
+      opt.textContent = st;
+      locSelect.appendChild(opt);
+    });
+  }
+}
