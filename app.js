@@ -1,4 +1,4 @@
-// --- Cabinet Quote App Main Logic ---
+// --- Cabinet Quote App Main Logic with Type-ahead Suggestions ---
 
 let DATA = {};
 let cart = [];
@@ -35,6 +35,8 @@ const categoryColors = {
   }
 };
 
+// ---------- Load & Init ----------
+
 async function load() {
   try {
     let res = await fetch("prices.json");
@@ -68,15 +70,13 @@ function init() {
     colorSelect.addEventListener("change", onColorChange);
   }
 
-  // Listen for Enter key in add by code
+  // Code input: Enter adds, input shows suggestions, keyboard nav
   let codeInput = document.getElementById("codeInput");
   if (codeInput) {
-    codeInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        addByCode();
-      }
-    });
+    codeInput.addEventListener("keydown", onCodeInputKeydown);
+    codeInput.addEventListener("input", onCodeInputChange);
   }
+
   let qtyInput = document.getElementById("qtyInput");
   if (qtyInput) {
     qtyInput.addEventListener("keydown", function(e) {
@@ -85,6 +85,16 @@ function init() {
       }
     });
   }
+
+  // Click outside to close suggestions
+  document.addEventListener("click", (e) => {
+    const box = document.getElementById("codeSuggest");
+    const input = document.getElementById("codeInput");
+    if (!box || !input) return;
+    if (!box.contains(e.target) && e.target !== input) {
+      hideCodeSuggestions();
+    }
+  });
 
   populateLocationDropdown();
 
@@ -109,29 +119,28 @@ function init() {
     });
   }
 
-  // New: Apply color actions
+  // Apply color actions
   document.getElementById("applyColorNowBtn")?.addEventListener("click", () => {
     const cat = document.getElementById("categorySelect")?.value;
     const color = document.getElementById("colorSelect")?.value;
     if (!cat || !color) return;
-    const count = applyColorToCategory(cat, color);
+    applyColorToCategory(cat, color);
     renderCart();
-    if (count === 0) {
-      // optional: alert if nothing applied
-      // alert("No items from this category were updated or codes missing in selected color.");
-    }
   });
 
   document.getElementById("applyColorToCodeBtn")?.addEventListener("click", applySelectedColorToThisCode);
 
-  // Export listeners are attached after DOM ready (below)
+  // Export listeners attached after DOM ready (bottom)
 
   showCategory();
 }
 
+// ---------- Dropdown population ----------
+
 function onCategoryChange() {
   populateColorDropdown();
-  onColorChange(); // also refresh results and optionally sync
+  onColorChange();
+  hideCodeSuggestions();
 }
 
 function populateColorDropdown() {
@@ -165,20 +174,10 @@ function onColorChange() {
       renderCart();
     }
   }
+  hideCodeSuggestions();
 }
 
-function populateLocationDropdown() {
-  let locSelect = document.getElementById("locationSelect");
-  if (locSelect) {
-    locSelect.innerHTML = "";
-    Object.keys(taxRates).forEach(st => {
-      let opt = document.createElement("option");
-      opt.value = st;
-      opt.textContent = st;
-      locSelect.appendChild(opt);
-    });
-  }
-}
+// ---------- Catalog rendering (cards) ----------
 
 function showCategory() {
   let catSelect = document.getElementById("categorySelect");
@@ -194,11 +193,13 @@ function showCategory() {
   Object.entries(DATA[cat][color]).forEach(([code, price]) => {
     let div = document.createElement("div");
     div.className = "card";
-    div.innerHTML = `<b>${code}</b><small>$${price.toFixed(2)}</small>`;
-    div.onclick = () => addToCart(cat, color, code, price);
+    div.innerHTML = `<b>${code}</b><small>$${Number(price).toFixed(2)}</small>`;
+    div.onclick = () => addToCart(cat, color, code, Number(price));
     results.appendChild(div);
   });
 }
+
+// ---------- Add to cart (by code or card) ----------
 
 function addByCode() {
   let catSelect = document.getElementById("categorySelect");
@@ -221,7 +222,7 @@ function addByCode() {
     Object.keys(DATA[cat][color]).forEach(k => { codeMap[k.toUpperCase()] = k; });
     let actualCode = codeMap[code];
     if (actualCode) {
-      let basePrice = DATA[cat][color][actualCode];
+      let basePrice = Number(DATA[cat][color][actualCode]);
       let multiplier = (categoryColors[cat] && categoryColors[cat][color]) ? categoryColors[cat][color] : 1;
       let price = basePrice * multiplier;
 
@@ -232,6 +233,7 @@ function addByCode() {
         cart.push({ cat, code: actualCode, color, price, qty: qty });
       }
       renderCart();
+      hideCodeSuggestions();
       codeInput.value = "";
       qtyInput.value = 1;
     } else {
@@ -254,6 +256,8 @@ function addToCart(cat, color, code, basePrice) {
   }
   renderCart();
 }
+
+// ---------- Cart rendering and totals ----------
 
 function renderCart() {
   let body = document.getElementById("cart-body");
@@ -318,9 +322,7 @@ window.setDiscount = function(rate) {
 
 // ---------- Color apply helpers ----------
 
-// Apply selected color to all items in a category (if code exists in that color)
 function applyColorToCategory(cat, newColor) {
-  let updated = 0;
   cart.forEach(i => {
     if (i.cat === cat) {
       const basePrice = DATA?.[cat]?.[newColor]?.[i.code];
@@ -328,14 +330,11 @@ function applyColorToCategory(cat, newColor) {
         const mult = categoryColors?.[cat]?.[newColor] ?? 1;
         i.color = newColor;
         i.price = basePrice * mult;
-        updated++;
       }
     }
   });
-  return updated;
 }
 
-// Apply selected color to this code (from codeInput) within current category
 function applySelectedColorToThisCode() {
   const cat = document.getElementById("categorySelect")?.value;
   const newColor = document.getElementById("colorSelect")?.value;
@@ -345,8 +344,8 @@ function applySelectedColorToThisCode() {
     return;
   }
   const codeUpper = codeVal.toUpperCase();
-  let updated = 0;
 
+  let changed = false;
   cart.forEach(i => {
     if (i.cat === cat && i.code.toUpperCase() === codeUpper) {
       const basePrice = DATA?.[cat]?.[newColor]?.[i.code];
@@ -354,18 +353,158 @@ function applySelectedColorToThisCode() {
         const mult = categoryColors?.[cat]?.[newColor] ?? 1;
         i.color = newColor;
         i.price = basePrice * mult;
-        updated++;
+        changed = true;
       }
     }
   });
 
   renderCart();
-  if (updated === 0) {
+  if (!changed) {
     alert("No matching items updated. The code may not exist in the selected color.");
   }
 }
 
-// ----------------- EXPORT FUNCTIONS -----------------
+// ---------- Type-ahead suggestions for codeInput ----------
+
+let currentSuggestions = [];
+let suggestIndex = -1;
+
+function onCodeInputChange(e) {
+  const prefix = e.target.value.trim().toUpperCase();
+  if (!prefix) {
+    hideCodeSuggestions();
+    return;
+  }
+  const cat = document.getElementById("categorySelect")?.value;
+  const color = document.getElementById("colorSelect")?.value;
+  if (!cat || !color || !DATA[cat] || !DATA[cat][color]) {
+    hideCodeSuggestions();
+    return;
+  }
+
+  // Find codes starting with prefix (case-insensitive)
+  const allCodes = Object.keys(DATA[cat][color]);
+  const matches = allCodes
+    .filter(c => c.toUpperCase().startsWith(prefix))
+    .sort((a, b) => a.localeCompare(b))
+    .slice(0, 20);
+
+  if (matches.length === 0) {
+    hideCodeSuggestions();
+    return;
+  }
+
+  renderCodeSuggestions(matches, cat, color);
+}
+
+function renderCodeSuggestions(codes, cat, color) {
+  currentSuggestions = codes.slice();
+  suggestIndex = -1;
+
+  const box = document.getElementById("codeSuggest");
+  const input = document.getElementById("codeInput");
+  if (!box || !input) return;
+
+  // Match the width of the input for a clean look
+  const rect = input.getBoundingClientRect();
+  box.style.width = rect.width + "px";
+
+  box.innerHTML = "";
+  codes.forEach((code, i) => {
+    const price = Number(DATA[cat][color][code]);
+    const item = document.createElement("div");
+    item.setAttribute("data-index", i);
+    item.style.padding = "6px 8px";
+    item.style.cursor = "pointer";
+    item.style.display = "flex";
+    item.style.justifyContent = "space-between";
+    item.style.alignItems = "center";
+    item.style.gap = "8px";
+    item.onmouseenter = () => highlightSuggestIndex(i);
+    item.onclick = () => chooseSuggestion(i);
+
+    const left = document.createElement("div");
+    left.innerHTML = `<b>${code}</b>`;
+    const right = document.createElement("div");
+    right.innerHTML = `<small>$${price.toFixed(2)}</small>`;
+
+    item.appendChild(left);
+    item.appendChild(right);
+    box.appendChild(item);
+  });
+
+  // subtle divider lines
+  Array.from(box.children).forEach((el, idx, arr) => {
+    if (idx < arr.length - 1) {
+      el.style.borderBottom = "1px solid #eee";
+    }
+  });
+
+  box.style.display = "block";
+}
+
+function hideCodeSuggestions() {
+  const box = document.getElementById("codeSuggest");
+  if (box) {
+    box.style.display = "none";
+    box.innerHTML = "";
+  }
+  currentSuggestions = [];
+  suggestIndex = -1;
+}
+
+function highlightSuggestIndex(idx) {
+  suggestIndex = idx;
+  const box = document.getElementById("codeSuggest");
+  if (!box) return;
+  Array.from(box.children).forEach((el, i) => {
+    el.style.background = i === idx ? "#eef4ff" : "#fff";
+  });
+}
+
+function chooseSuggestion(idx) {
+  if (idx < 0 || idx >= currentSuggestions.length) return;
+  const code = currentSuggestions[idx];
+  const input = document.getElementById("codeInput");
+  if (input) {
+    input.value = code;
+    input.focus();
+  }
+  hideCodeSuggestions();
+}
+
+function onCodeInputKeydown(e) {
+  const hasBox = document.getElementById("codeSuggest")?.style.display === "block";
+  if (e.key === "Enter") {
+    if (hasBox && suggestIndex >= 0) {
+      e.preventDefault();
+      chooseSuggestion(suggestIndex);
+      // After choosing, pressing Enter again will add; here we immediately add for convenience:
+      addByCode();
+      return;
+    }
+    // No suggestion highlighted; proceed with adding
+    addByCode();
+  } else if (e.key === "ArrowDown") {
+    const len = currentSuggestions.length;
+    if (len > 0) {
+      e.preventDefault();
+      suggestIndex = (suggestIndex + 1) % len;
+      highlightSuggestIndex(suggestIndex);
+    }
+  } else if (e.key === "ArrowUp") {
+    const len = currentSuggestions.length;
+    if (len > 0) {
+      e.preventDefault();
+      suggestIndex = (suggestIndex - 1 + len) % len;
+      highlightSuggestIndex(suggestIndex);
+    }
+  } else if (e.key === "Escape") {
+    hideCodeSuggestions();
+  }
+}
+
+// ---------- Export helpers and functions ----------
 
 // Helper: pad or trim string to fixed width (for text export)
 function pad(str, len) {
