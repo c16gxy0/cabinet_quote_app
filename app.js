@@ -4,11 +4,12 @@ let DATA = {};
 let cart = [];
 let discountRate = 0.5; // 50% default
 
-// Tax rates by location
+// Tax rates by location (add more as needed)
 let taxRates = {
   "AZ": 0.086,
 };
 
+// Optional multipliers per category/color
 const categoryColors = {
   "Shaker Style": {
     "White Shaker": 1.0,
@@ -64,7 +65,7 @@ function init() {
   // Listen for color changes
   let colorSelect = document.getElementById("colorSelect");
   if (colorSelect) {
-    colorSelect.addEventListener("change", showCategory);
+    colorSelect.addEventListener("change", onColorChange);
   }
 
   // Listen for Enter key in add by code
@@ -87,19 +88,19 @@ function init() {
 
   populateLocationDropdown();
 
-  // Add event for no tax checkbox
+  // No tax checkbox
   let noTaxChk = document.getElementById("noTaxChk");
   if (noTaxChk) {
     noTaxChk.addEventListener("change", calcTotals);
   }
 
-  // Add event for add item by code
+  // Add item by code
   let addBtn = document.getElementById("addBtn");
   if (addBtn) {
     addBtn.addEventListener("click", addByCode);
   }
 
-  // Optionally clear cart
+  // Clear cart
   let clearBtn = document.getElementById("clearBtn");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
@@ -108,14 +109,29 @@ function init() {
     });
   }
 
-  // Attach export listeners in DOMContentLoaded (see below)
+  // New: Apply color actions
+  document.getElementById("applyColorNowBtn")?.addEventListener("click", () => {
+    const cat = document.getElementById("categorySelect")?.value;
+    const color = document.getElementById("colorSelect")?.value;
+    if (!cat || !color) return;
+    const count = applyColorToCategory(cat, color);
+    renderCart();
+    if (count === 0) {
+      // optional: alert if nothing applied
+      // alert("No items from this category were updated or codes missing in selected color.");
+    }
+  });
+
+  document.getElementById("applyColorToCodeBtn")?.addEventListener("click", applySelectedColorToThisCode);
+
+  // Export listeners are attached after DOM ready (below)
 
   showCategory();
 }
 
 function onCategoryChange() {
   populateColorDropdown();
-  showCategory();
+  onColorChange(); // also refresh results and optionally sync
 }
 
 function populateColorDropdown() {
@@ -135,6 +151,19 @@ function populateColorDropdown() {
   }
   if (colorSelect.options.length > 0) {
     colorSelect.selectedIndex = 0;
+  }
+}
+
+function onColorChange() {
+  showCategory();
+  const autoSync = document.getElementById("syncColorCatChk")?.checked;
+  if (autoSync) {
+    const cat = document.getElementById("categorySelect")?.value;
+    const color = document.getElementById("colorSelect")?.value;
+    if (cat && color) {
+      applyColorToCategory(cat, color);
+      renderCart();
+    }
   }
 }
 
@@ -177,15 +206,16 @@ function addByCode() {
   let codeInput = document.getElementById("codeInput");
   let qtyInput = document.getElementById("qtyInput");
   if (!catSelect || !colorSelect || !codeInput || !qtyInput) return;
+
   let cat = catSelect.value;
   let color = colorSelect.value;
   let codeInputValue = codeInput.value.trim();
+  if (!codeInputValue) return;
 
-  // Make code input uppercase for comparison
+  // uppercase compare
   let code = codeInputValue.toUpperCase();
   let qty = parseInt(qtyInput.value, 10) || 1;
 
-  // Find the actual code in pricing data, case-insensitive
   let codeMap = {};
   if (DATA[cat] && DATA[cat][color]) {
     Object.keys(DATA[cat][color]).forEach(k => { codeMap[k.toUpperCase()] = k; });
@@ -273,17 +303,11 @@ function calcTotals() {
   let tax = afterDiscount * taxRate;
   let total = afterDiscount + tax;
 
-  let subtotalTxt = document.getElementById("subTotalTxt");
-  let discountTxt = document.getElementById("discountTxt");
-  let afterDiscountTxt = document.getElementById("afterDiscountTxt");
-  let taxRateTxt = document.getElementById("taxRateTxt");
-  let grandTotalTxt = document.getElementById("grandTotalTxt");
-
-  if (subtotalTxt) subtotalTxt.textContent = `$${subtotal.toFixed(2)}`;
-  if (discountTxt) discountTxt.textContent = `${(discountRate * 100).toFixed(0)}%`;
-  if (afterDiscountTxt) afterDiscountTxt.textContent = `$${afterDiscount.toFixed(2)}`;
-  if (taxRateTxt) taxRateTxt.textContent = `${(taxRate*100).toFixed(2)}%`;
-  if (grandTotalTxt) grandTotalTxt.textContent = `$${total.toFixed(2)}`;
+  document.getElementById("subTotalTxt").textContent = `$${subtotal.toFixed(2)}`;
+  document.getElementById("discountTxt").textContent = `${(discountRate * 100).toFixed(0)}%`;
+  document.getElementById("afterDiscountTxt").textContent = `$${afterDiscount.toFixed(2)}`;
+  document.getElementById("taxRateTxt").textContent = `${(taxRate*100).toFixed(2)}%`;
+  document.getElementById("grandTotalTxt").textContent = `$${total.toFixed(2)}`;
 }
 
 // Allow owner to set discount via console
@@ -291,6 +315,55 @@ window.setDiscount = function(rate) {
   discountRate = rate;
   renderCart();
 };
+
+// ---------- Color apply helpers ----------
+
+// Apply selected color to all items in a category (if code exists in that color)
+function applyColorToCategory(cat, newColor) {
+  let updated = 0;
+  cart.forEach(i => {
+    if (i.cat === cat) {
+      const basePrice = DATA?.[cat]?.[newColor]?.[i.code];
+      if (typeof basePrice === "number") {
+        const mult = categoryColors?.[cat]?.[newColor] ?? 1;
+        i.color = newColor;
+        i.price = basePrice * mult;
+        updated++;
+      }
+    }
+  });
+  return updated;
+}
+
+// Apply selected color to this code (from codeInput) within current category
+function applySelectedColorToThisCode() {
+  const cat = document.getElementById("categorySelect")?.value;
+  const newColor = document.getElementById("colorSelect")?.value;
+  const codeVal = document.getElementById("codeInput")?.value.trim();
+  if (!cat || !newColor || !codeVal) {
+    alert("Enter a code first and select category/color.");
+    return;
+  }
+  const codeUpper = codeVal.toUpperCase();
+  let updated = 0;
+
+  cart.forEach(i => {
+    if (i.cat === cat && i.code.toUpperCase() === codeUpper) {
+      const basePrice = DATA?.[cat]?.[newColor]?.[i.code];
+      if (typeof basePrice === "number") {
+        const mult = categoryColors?.[cat]?.[newColor] ?? 1;
+        i.color = newColor;
+        i.price = basePrice * mult;
+        updated++;
+      }
+    }
+  });
+
+  renderCart();
+  if (updated === 0) {
+    alert("No matching items updated. The code may not exist in the selected color.");
+  }
+}
 
 // ----------------- EXPORT FUNCTIONS -----------------
 
@@ -311,7 +384,7 @@ function getJobName() {
   return job && job.value.trim() ? job.value.trim() : "";
 }
 
-// 1. Export as pretty TEXT
+// Export as pretty TEXT
 function exportAsText() {
   let lines = [];
   const jobName = getJobName();
@@ -347,7 +420,7 @@ function exportAsText() {
   document.body.removeChild(link);
 }
 
-// 2. Export as nicely formatted Word (HTML table in .doc)
+// Export as Word (.doc using HTML)
 function exportAsWord() {
   const jobName = getJobName();
   let html = `<h2>Cabinet Quote</h2>`;
@@ -394,7 +467,7 @@ function exportAsWord() {
   document.body.removeChild(link);
 }
 
-// 3. Export as nicely formatted PDF
+// Export as PDF (jsPDF)
 function exportAsPDF() {
   const jsPDF = window.jsPDF ? window.jsPDF : window.jspdf?.jsPDF;
   if (!jsPDF) {
@@ -447,7 +520,7 @@ function exportAsPDF() {
   doc.save("quote.pdf");
 }
 
-// Attach export listeners once DOM is ready (so buttons always work)
+// Attach listeners once DOM is ready
 window.addEventListener("DOMContentLoaded", function() {
   if (document.getElementById("exportTextBtn"))
     document.getElementById("exportTextBtn").addEventListener("click", exportAsText);
@@ -455,7 +528,8 @@ window.addEventListener("DOMContentLoaded", function() {
     document.getElementById("exportWordBtn").addEventListener("click", exportAsWord);
   if (document.getElementById("exportPdfBtn"))
     document.getElementById("exportPdfBtn").addEventListener("click", exportAsPDF);
-  // allow cart render on load if items exist
+
+  // render if anything preloaded
   renderCart();
 });
 
