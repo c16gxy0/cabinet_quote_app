@@ -16,6 +16,7 @@
             <label for="jobNameInput">Job name</label>
             <input id="jobNameInput" type="text" placeholder="Enter job name..." style="width:180px"/>
           </div>
+
           <div class="row">
             <label for="categorySelect">Category</label>
             <select id="categorySelect"></select>
@@ -24,6 +25,16 @@
             <label for="colorSelect">Color</label>
             <select id="colorSelect"></select>
           </div>
+
+          <!-- New: color apply controls -->
+          <div class="row">
+            <label class="hstack" style="gap:8px;">
+              <input type="checkbox" id="syncColorCatChk" />
+              Auto-apply selected color to all items in this category
+            </label>
+            <button id="applyColorNowBtn" class="btn ghost" style="margin-left:auto;">Apply now</button>
+          </div>
+
           <div class="row">
             <label for="codeInput">Add item by code</label>
             <div class="hstack">
@@ -35,6 +46,12 @@
               Enter key adds item by code.
             </small>
           </div>
+
+          <!-- New: apply selected color to this code in cart -->
+          <div class="row">
+            <button id="applyColorToCodeBtn" class="btn ghost">Apply selected color to this code in cart</button>
+          </div>
+
           <div class="row">
             <details>
               <summary>Find items</summary>
@@ -43,6 +60,7 @@
           </div>
         </section>
       </div>
+
       <!-- Right side: picked items, tax, total etc -->
       <div class="right-panel">
         <section class="panel">
@@ -62,6 +80,7 @@
             <button id="clearBtn" class="btn ghost">Clear all</button>
           </div>
         </section>
+
         <section class="panel">
           <h3>Tax</h3>
           <div class="row">
@@ -75,6 +94,7 @@
             </label>
           </div>
         </section>
+
         <section class="panel totals">
           <div class="line">
             <span>Subtotal</span>
@@ -97,7 +117,8 @@
             <span id="grandTotalTxt">$0.00</span>
           </div>
         </section>
-        <!-- Export buttons section (added, matches your style and placement) -->
+
+        <!-- Export buttons section -->
         <section class="panel">
           <div id="exportButtons" style="margin-top:12px;">
             <button id="exportTextBtn" class="btn">Export as Text</button>
@@ -107,9 +128,11 @@
         </section>
       </div>
     </div>
+
     <footer class="muted center" style="margin-top:16px">
-      <small>Prices are subject to the final quotation. This system is for reference only.</small>
+      <small>Switch color to update item prices. Data loads from prices.json</small>
     </footer>
+
     <!-- jsPDF for PDF export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
