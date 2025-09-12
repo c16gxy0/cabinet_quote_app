@@ -1,3 +1,5 @@
+// --- Cabinet Quote App Main Logic ---
+
 let DATA = {};
 let cart = [];
 let discountRate = 0.5; // 50% default
@@ -106,8 +108,7 @@ function init() {
     });
   }
 
-  // Attach export listeners
-  attachExportListeners();
+  // Attach export listeners in DOMContentLoaded (see below)
 
   showCategory();
 }
@@ -232,7 +233,7 @@ function renderCart() {
   cart.forEach((item, idx) => {
     let tr = document.createElement("tr");
     tr.innerHTML = `
-      <td style="width:190px">${item.code} <br><small>${item.color}</small></td>
+      <td style="width:150px">${item.code} <br><small>${item.color}</small></td>
       <td>$${item.price.toFixed(2)}</td>
       <td style="width:60px">
         <input type="number" min="1" value="${item.qty}" style="width:50px;text-align:right"
@@ -292,27 +293,51 @@ window.setDiscount = function(rate) {
 };
 
 // ----------------- EXPORT FUNCTIONS -----------------
-function getQuoteText() {
-  let lines = [];
-  lines.push("Quote");
-  lines.push("===================================");
-  cart.forEach(item => {
-    lines.push(
-      `${item.code} (${item.color}) x${item.qty} @ $${item.price.toFixed(2)} = $${(item.price * item.qty).toFixed(2)}`
-    );
-  });
-  lines.push("-----------------------------------");
-  lines.push(`Subtotal: ${document.getElementById("subTotalTxt").textContent}`);
-  lines.push(`Discount: ${document.getElementById("discountTxt").textContent}`);
-  lines.push(`After Discount: ${document.getElementById("afterDiscountTxt").textContent}`);
-  lines.push(`Tax Rate: ${document.getElementById("taxRateTxt").textContent}`);
-  lines.push(`Total: ${document.getElementById("grandTotalTxt").textContent}`);
-  return lines.join("\n");
+
+// Helper: pad or trim string to fixed width (for text export)
+function pad(str, len) {
+  str = String(str);
+  if (str.length > len) return str.slice(0, len);
+  return str + ' '.repeat(len - str.length);
 }
 
-// Export as text file
+// Helper: get formatted date (e.g. 2025-09-12)
+function getToday() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function getJobName() {
+  const job = document.getElementById("jobNameInput");
+  return job && job.value.trim() ? job.value.trim() : "";
+}
+
+// 1. Export as pretty TEXT
 function exportAsText() {
-  let text = getQuoteText();
+  let lines = [];
+  const jobName = getJobName();
+  lines.push("CABINET QUOTE");
+  if (jobName) lines.push("Job: " + jobName);
+  lines.push("Date: " + getToday());
+  lines.push("");
+  lines.push(pad("CODE", 12) + pad("COLOR", 16) + pad("QTY", 5) + pad("UNIT", 10) + pad("TOTAL", 10));
+  lines.push("-".repeat(53));
+  cart.forEach(item => {
+    lines.push(
+      pad(item.code,12) +
+      pad(item.color,16) +
+      pad(item.qty,5) +
+      pad("$"+item.price.toFixed(2),10) +
+      pad("$"+(item.price*item.qty).toFixed(2),10)
+    );
+  });
+  lines.push("");
+  lines.push("Summary:");
+  lines.push("Subtotal:      " + document.getElementById("subTotalTxt").textContent);
+  lines.push("Discount:      " + document.getElementById("discountTxt").textContent);
+  lines.push("After Discount:" + document.getElementById("afterDiscountTxt").textContent);
+  lines.push("Tax Rate:      " + document.getElementById("taxRateTxt").textContent);
+  lines.push("Grand Total:   " + document.getElementById("grandTotalTxt").textContent);
+  let text = lines.join("\n");
   let blob = new Blob([text], {type: "text/plain"});
   let link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -322,14 +347,45 @@ function exportAsText() {
   document.body.removeChild(link);
 }
 
-// Export as Word file (by saving HTML as .doc)
+// 2. Export as nicely formatted Word (HTML table in .doc)
 function exportAsWord() {
-  let text = getQuoteText().replace(/\n/g, "<br>");
-  let html = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><title>Quote</title></head><body>${text}</body></html>
+  const jobName = getJobName();
+  let html = `<h2>Cabinet Quote</h2>`;
+  if (jobName) html += `<div><b>Job:</b> ${jobName}</div>`;
+  html += `<div><b>Date:</b> ${getToday()}</div>`;
+  html += "<br>";
+  html += `<table border="1" cellpadding="4" style="border-collapse:collapse;">
+    <tr>
+      <th>Code</th>
+      <th>Color</th>
+      <th>Qty</th>
+      <th>Unit</th>
+      <th>Total</th>
+    </tr>`;
+  cart.forEach(item => {
+    html += `<tr>
+      <td>${item.code}</td>
+      <td>${item.color}</td>
+      <td>${item.qty}</td>
+      <td>$${item.price.toFixed(2)}</td>
+      <td>$${(item.price*item.qty).toFixed(2)}</td>
+    </tr>`;
+  });
+  html += `</table><br>
+    <b>Summary:</b><br>
+    Subtotal: ${document.getElementById("subTotalTxt").textContent}<br>
+    Discount: ${document.getElementById("discountTxt").textContent}<br>
+    After Discount: ${document.getElementById("afterDiscountTxt").textContent}<br>
+    Tax Rate: ${document.getElementById("taxRateTxt").textContent}<br>
+    Grand Total: ${document.getElementById("grandTotalTxt").textContent}
   `;
-  let blob = new Blob(['\ufeff', html], {type: 'application/msword'});
+
+  let doc = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><title>Quote</title></head>
+    <body>${html}</body></html>
+  `;
+  let blob = new Blob(['\ufeff', doc], {type: 'application/msword'});
   let link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
   link.download = "quote.doc";
@@ -338,30 +394,70 @@ function exportAsWord() {
   document.body.removeChild(link);
 }
 
-// Export as PDF (using jsPDF library)
+// 3. Export as nicely formatted PDF
 function exportAsPDF() {
-  if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+  const jsPDF = window.jsPDF ? window.jsPDF : window.jspdf?.jsPDF;
+  if (!jsPDF) {
     alert("PDF export requires jsPDF. Please include it on your page.");
     return;
   }
-  // Support for both jsPDF v2.x and v1.x
-  let doc = window.jsPDF ? new window.jsPDF() : new window.jspdf.jsPDF();
-  let lines = getQuoteText().split("\n");
-  let y = 10;
-  lines.forEach(line => {
-    doc.text(line, 10, y);
-    y += 8;
+  const jobName = getJobName();
+  let doc = new jsPDF();
+  let y = 12;
+  doc.setFontSize(16);
+  doc.text("Cabinet Quote", 10, y);
+  y += 9;
+  doc.setFontSize(11);
+  if (jobName) {
+    doc.text("Job: " + jobName, 10, y);
+    y += 7;
+  }
+  doc.text("Date: " + getToday(), 10, y);
+  y += 9;
+
+  // Table header
+  doc.setFont(undefined, 'bold');
+  doc.text("Code", 10, y);
+  doc.text("Color", 38, y);
+  doc.text("Qty", 86, y);
+  doc.text("Unit", 104, y);
+  doc.text("Total", 134, y);
+  doc.setFont(undefined, 'normal');
+  y += 5;
+
+  cart.forEach(item => {
+    doc.text(item.code, 10, y);
+    doc.text(item.color, 38, y);
+    doc.text(String(item.qty), 86, y, {align:'right'});
+    doc.text("$" + item.price.toFixed(2), 104, y, {align:'right'});
+    doc.text("$" + (item.price*item.qty).toFixed(2), 134, y, {align:'right'});
+    y += 6;
+    if (y > 270) { doc.addPage(); y = 12; }
   });
+
+  y += 6;
+  doc.setFont(undefined, 'bold');
+  doc.text("Summary:", 10, y); y += 7; doc.setFont(undefined, 'normal');
+  doc.text("Subtotal:      " + document.getElementById("subTotalTxt").textContent, 10, y); y += 6;
+  doc.text("Discount:      " + document.getElementById("discountTxt").textContent, 10, y); y += 6;
+  doc.text("After Discount:" + document.getElementById("afterDiscountTxt").textContent, 10, y); y += 6;
+  doc.text("Tax Rate:      " + document.getElementById("taxRateTxt").textContent, 10, y); y += 6;
+  doc.text("Grand Total:   " + document.getElementById("grandTotalTxt").textContent, 10, y);
+
   doc.save("quote.pdf");
 }
 
-function attachExportListeners() {
+// Attach export listeners once DOM is ready (so buttons always work)
+window.addEventListener("DOMContentLoaded", function() {
   if (document.getElementById("exportTextBtn"))
     document.getElementById("exportTextBtn").addEventListener("click", exportAsText);
   if (document.getElementById("exportWordBtn"))
     document.getElementById("exportWordBtn").addEventListener("click", exportAsWord);
   if (document.getElementById("exportPdfBtn"))
     document.getElementById("exportPdfBtn").addEventListener("click", exportAsPDF);
-}
+  // allow cart render on load if items exist
+  renderCart();
+});
 
+// Main load
 load();
