@@ -123,6 +123,16 @@
             <span>Grand total</span>
             <span id="grandTotalTxt">$0.00</span>
           </div>
+          <div class="discountControls">
+            <label for="discountPasscodeInput">Passcode</label>
+            <input id="discountPasscodeInput" type="password" placeholder="Enter passcode" />
+            <div class="hstack">
+              <input id="discountInput" type="number" min="0" max="100" step="1" aria-label="Discount percent" />
+              <span class="muted">%</span>
+              <button id="applyDiscountBtn" class="btn ghost">Update discount</button>
+            </div>
+            <small id="discountStatus" class="muted"></small>
+          </div>
         </section>
 
         <!-- Export buttons section -->

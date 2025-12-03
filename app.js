@@ -4,6 +4,7 @@ let DATA = {};
 let dataReady = false;
 let cart = [];
 let discountRate = 0.5; // 50% default
+const DISCOUNT_PASSCODE = "2468"; // simple passcode to allow discount changes
 
 // Tax rates by location (add more as needed)
 let taxRates = {
@@ -113,6 +114,13 @@ function wireUI() {
 
   // No tax checkbox
   document.getElementById("noTaxChk")?.addEventListener("change", calcTotals);
+
+  // Discount controls (guarded by passcode)
+  document.getElementById("applyDiscountBtn")?.addEventListener("click", applyDiscountChange);
+  const discountInput = document.getElementById("discountInput");
+  if (discountInput) {
+    discountInput.value = (discountRate * 100).toFixed(0);
+  }
 
   // Add item by code (wire immediately; disable until data is loaded)
   const addBtn = document.getElementById("addBtn");
@@ -320,11 +328,41 @@ function calcTotals() {
   document.getElementById("grandTotalTxt").textContent = `$${total.toFixed(2)}`;
 }
 
+function applyDiscountChange() {
+  const pass = document.getElementById("discountPasscodeInput")?.value || "";
+  const input = document.getElementById("discountInput")?.value;
+  const status = document.getElementById("discountStatus");
+
+  if (pass !== DISCOUNT_PASSCODE) {
+    if (status) status.textContent = "Invalid passcode. Discount unchanged.";
+    return;
+  }
+
+  const pct = Number(input);
+  if (Number.isNaN(pct)) {
+    if (status) status.textContent = "Enter a discount percent (0-100).";
+    return;
+  }
+
+  const rate = Math.max(0, Math.min(1, pct / 100));
+  if (status) status.textContent = `Discount updated to ${(rate * 100).toFixed(0)}%.`;
+  setDiscount(rate);
+}
+
 // Allow owner to set discount via console
 window.setDiscount = function(rate) {
-  discountRate = rate;
-  renderCart();
+  setDiscount(rate);
 };
+
+function setDiscount(rate) {
+  const safeRate = Math.max(0, Math.min(1, Number(rate)));
+  discountRate = Number.isFinite(safeRate) ? safeRate : discountRate;
+  const discountInput = document.getElementById("discountInput");
+  if (discountInput) {
+    discountInput.value = (discountRate * 100).toFixed(0);
+  }
+  renderCart();
+}
 
 // ---------- Color apply helpers ----------
 
