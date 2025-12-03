@@ -135,3 +135,9 @@ tbody tr td:last-child {
 }
 .totals .line:last-child { border:none }
 .totals .grand { font-size:22px; font-weight:800 }
+.discountControls {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
