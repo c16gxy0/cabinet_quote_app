@@ -114,6 +114,15 @@ function wireUI() {
   // No tax checkbox
   document.getElementById("noTaxChk")?.addEventListener("change", calcTotals);
 
+    // Discount input
+  const discountInput = document.getElementById("discountInput");
+  if (discountInput) {
+    discountInput.value = (discountRate * 100).toFixed(0);
+    const handle = onDiscountChange;
+    discountInput.addEventListener("input", handle);
+    discountInput.addEventListener("change", handle);
+  }
+
   // Add item by code (wire immediately; disable until data is loaded)
   const addBtn = document.getElementById("addBtn");
   if (addBtn) {
@@ -320,9 +329,28 @@ function calcTotals() {
   document.getElementById("grandTotalTxt").textContent = `$${total.toFixed(2)}`;
 }
 
+function onDiscountChange() {
+  const input = document.getElementById("discountInput");
+  if (!input) return;
+
+  const raw = parseFloat(input.value);
+  const clean = Number.isFinite(raw) ? Math.min(100, Math.max(0, raw)) : 0;
+
+  if (!Number.isFinite(raw) || clean !== raw) {
+    input.value = clean.toString();
+  }
+
+  discountRate = clean / 100;
+  renderCart();
+}
+
 // Allow owner to set discount via console
 window.setDiscount = function(rate) {
-  discountRate = rate;
+  discountRate = Math.max(0, Math.min(1, rate));
+  const input = document.getElementById("discountInput");
+  if (input) {
+    input.value = (discountRate * 100).toFixed(0);
+  }
   renderCart();
 };
 
